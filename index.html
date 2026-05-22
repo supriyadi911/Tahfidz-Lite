@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Catatan Setoran Hafalan Qur'an</title>
+    <!-- Library SheetJS untuk Ekspor & Impor Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        /* =========================================
+           CSS VARIABLES & TEMA (TERMASUK DARK MODE)
+        ========================================= */
+        :root {
+            --primary: #007D40; 
+            --primary-hover: #005A2E;
+            --secondary: #D4AF37; 
+            --bg-body: #F4F7F6;
+            --bg-card: #FFFFFF;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #E2E8F0;
+            --sidebar-bg: #004D26;
+            --sidebar-text: #FFFFFF;
+            --sidebar-hover: rgba(255, 255, 255, 0.1);
+            --danger: #DC2626;
+            --success: #16A34A;
+            --warning: #D97706;
+            --whatsapp: #25D366;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.3s ease;
+            --radius: 8px;
+            --bottom-nav-height: 65px;
+        }
+
+        .dark-mode {
+            --bg-body: #111827; --bg-card: #1F2937; --text-main: #F9FAFB;
+            --text-muted: #9CA3AF; --border-color: #374151; --sidebar-bg: #064E3B;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        /* =========================================
+           RESET & GLOBAL STYLES
+        ========================================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-body); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+
+        /* =========================================
+           SPLASH SCREEN PREMIUN ISLAMI
+        ========================================= */
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #002b14 0%, #005A2E 50%, #007D40 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; transition: opacity 0.6s ease-out, visibility 0.6s ease-out; overflow: hidden; }
+        .splash-glow { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(212,175,55,0.25) 0%, rgba(212,175,55,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); animation: pulseGlow 4s infinite alternate ease-in-out; }
+        .splash-icon-container { position: relative; z-index: 2; margin-bottom: 24px; animation: floatIcon 3s infinite ease-in-out; display: flex; justify-content: center; align-items: center; }
+        .splash-icon-container svg { width: 100px; height: 100px; color: var(--secondary); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4)); }
+        .splash-ornament { position: absolute; width: 150px; height: 150px; border: 2px dashed rgba(212, 175, 55, 0.4); border-radius: 50%; animation: spinOrnament 20s linear infinite; }
+        .splash-title { font-size: 2.2rem; font-weight: 800; letter-spacing: 2px; text-align: center; color: #FFFFFF; z-index: 2; text-shadow: 0 2px 8px rgba(0,0,0,0.5); animation: slideUpFade 1.2s ease-out; }
+        .splash-subtitle { font-size: 1.15rem; color: var(--secondary); z-index: 2; margin-top: 10px; font-weight: 600; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); animation: slideUpFade 1.2s ease-out 0.3s both; }
+        @keyframes pulseGlow { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.6; } 100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } }
+        @keyframes floatIcon { 0% { transform: translateY(0px); } 50% { transform: translateY(-12px); } 100% { transform: translateY(0px); } }
+        @keyframes spinOrnament { to { transform: rotate(360deg); } }
+        @keyframes slideUpFade { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* =========================================
+           LAYOUT & SIDEBAR (DESKTOP)
+        ========================================= */
+        .sidebar { width: 240px; background-color: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; transition: var(--transition); z-index: 100; position: fixed; height: 100vh; left: 0; top: 0; }
+        .sidebar-header { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header svg { color: var(--secondary); width: 28px; height: 28px; }
+        .sidebar-header h2 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
+        .nav-menu { padding: 16px 0; flex-grow: 1; overflow-y: auto;}
+        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.7); transition: var(--transition); cursor: pointer; border-left: 4px solid transparent; font-size: 0.95rem; }
+        .nav-item:hover { background-color: var(--sidebar-hover); color: #fff; }
+        .nav-item.active { background-color: var(--sidebar-hover); color: var(--secondary); border-left-color: var(--secondary); font-weight: 600; }
+        .nav-item svg { width: 20px; height: 20px; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; margin-left: 240px; width: calc(100% - 240px); min-height: 100vh; }
+
+        /* =========================================
+           TOP NAVBAR & DB CONNECTION DOT
+        ========================================= */
+        .topbar { background-color: var(--bg-card); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 90; }
+        .topbar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+        .school-info { text-align: left; }
+        .school-info h3 { font-size: 1.1rem; color: var(--primary); font-weight: 700;}
+        .dark-mode .school-info h3 { color: var(--secondary); }
+        .school-info p { font-size: 0.8rem; color: var(--text-muted); }
+        
+        .btn-icon { background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: var(--transition); }
+        .btn-icon:hover { background: var(--border-color); }
+        .btn-icon.danger-hover:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+        /* Status Koneksi DB */
+        .status-container { display: flex; align-items: center; gap: 8px; background: var(--bg-body); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); cursor: help; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--danger); box-shadow: 0 0 5px var(--danger); transition: all 0.3s; }
+        .status-dot.online { background-color: var(--success); box-shadow: 0 0 5px var(--success); }
+        .status-dot.syncing { background-color: var(--warning); box-shadow: 0 0 5px var(--warning); animation: blink 1s infinite alternate; }
+        @keyframes blink { from { opacity: 0.4; } to { opacity: 1; } }
+
+        /* =========================================
+           PAGES & COMPONENTS
+        ========================================= */
+        .page-content { padding: 24px; display: none; animation: fadeIn 0.3s ease; }
+        .page-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .page-title { font-size: 1.4rem; color: var(--primary); font-weight: 700; }
+        .dark-mode .page-title { color: var(--secondary); }
+
+        .card { background-color: var(--bg-card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border-color); margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { display: flex; align-items: center; gap: 16px; padding: 16px; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; background-color: rgba(0, 125, 64, 0.1); color: var(--primary); display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .dark-mode .stat-icon { background-color: rgba(212, 175, 55, 0.1); color: var(--secondary); }
+        .stat-icon svg { width: 24px; height: 24px; }
+        .stat-info h4 { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .stat-info p { font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin-top: 2px; }
+
+        .btn { padding: 8px 16px; border-radius: var(--radius); font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition); }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: var(--secondary); color: white; }
+        .btn-secondary:hover { background-color: #B5952F; }
+        .btn-outline { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+        .btn-outline:hover { background-color: var(--bg-body); }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: #B91C1C; }
+        .btn-whatsapp { background-color: var(--whatsapp); color: white; }
+        .btn-whatsapp:hover { background-color: #1ebe57; }
+        .btn-small { padding: 6px 10px; font-size: 0.8rem; }
+
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 700px; }
+        th, td { padding: 12px 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        th { background-color: var(--bg-body); color: var(--text-muted); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; white-space: nowrap; }
+        td { font-size: 0.9rem; }
+        tbody tr:hover { background-color: rgba(0,0,0,0.01); }
+        .dark-mode tbody tr:hover { background-color: rgba(255,255,255,0.02); }
+
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;}
+        .badge-success { background-color: rgba(22, 163, 74, 0.1); color: var(--success); }
+        .badge-warning { background-color: rgba(217, 119, 6, 0.1); color: var(--warning); }
+        .badge-danger { background-color: rgba(220, 38, 38, 0.1); color: var(--danger); }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 0.85rem; color: var(--text-muted); }
+        .form-control { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-body); color: var(--text-main); font-size: 0.9rem; transition: var(--transition); }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0, 125, 64, 0.1); }
+        
+        .mass-input-cell { min-width: 100px; padding: 6px; }
+        .mass-input-cell .form-control { padding: 6px 8px; font-size: 0.85rem; }
+        .mass-input-cell.small-col { min-width: 80px; }
+
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-bar .form-control { width: auto; flex-grow: 1; min-width: 150px;}
+
+        /* MODALS & TOASTS */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px; }
+        .modal-overlay.active { display: flex; }
+        .modal { background-color: var(--bg-card); border-radius: var(--radius); width: 100%; max-width: 450px; box-shadow: var(--shadow); animation: modalIn 0.2s ease; max-height: 90vh; overflow-y: auto; }
+        @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header { padding: 14px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 1.1rem; }
+        .modal-close { background: none; color: var(--text-muted); font-size: 1.5rem; line-height: 1; padding: 0; }
+        .modal-body { padding: 16px; }
+        .modal-footer { padding: 14px 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px; }
+
+        .toast-container { position: fixed; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1100; }
+        .toast { background-color: var(--success); color: white; padding: 10px 16px; border-radius: var(--radius); box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; font-size: 0.9rem; animation: slideInRight 0.3s forwards; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.fade-out { animation: fadeOutRight 0.3s forwards; }
+        @keyframes fadeOutRight { to { opacity: 0; transform: translateX(100%); } }
+
+        /* MOBILE BOTTOM NAVIGATION */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-card); box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100; border-top: 1px solid var(--border-color); padding-bottom: env(safe-area-inset-bottom); }
+        .bottom-nav-list { display: flex; justify-content: space-around; align-items: center; height: var(--bottom-nav-height); }
+        .bottom-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); width: 16.66%; height: 100%; font-size: 0.65rem; gap: 4px; transition: color 0.2s; }
+        .bottom-nav-item svg { width: 20px; height: 20px; }
+        .bottom-nav-item span { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width:100%; }
+        .bottom-nav-item.active { color: var(--primary); font-weight: 600; }
+        .dark-mode .bottom-nav-item.active { color: var(--secondary); }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; width: 100%; padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 10px); }
+            .bottom-nav { display: block; }
+            .topbar { padding: 12px 16px; }
+            .school-info h3 { font-size: 1rem; }
+            .page-content { padding: 16px; }
+            .card { padding: 16px; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 8px;}
+            .page-header .btn { width: 100%; justify-content: center; }
+            .toast-container { top: auto; bottom: 80px; left: 50%; transform: translateX(-50%); right: auto; width: 90%; }
+            .toast { justify-content: center; }
+            @keyframes slideInRight { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes fadeOutRight { to { opacity: 0; transform: translateY(20px); } }
+            #formSiswaRow { flex-direction: column; gap: 10px; }
+            
+            /* Status dot di mobile sembunyikan teksnya */
+            .status-container span:not(.status-dot) { display: none; }
+        }
+
+        @media print {
+            .sidebar, .topbar, .bottom-nav, .btn, .filter-bar, .toast-container, .modal-overlay { display: none !important; }
+            .main-content { margin:0; width: 100% !important; padding:0 !important; }
+            body { background: white; color: black; }
+            .card { box-shadow: none; border: none; padding: 0; }
+            table { width: 100%; border-collapse: collapse; min-width: auto;}
+            th, td { border: 1px solid #ddd; padding: 6px; font-size: 12pt; }
+            .page-content:not(.active) { display: none !important; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        }
+        .print-header { display: none; }
+        #formSiswaRow { display: flex; gap: 12px; }
+        .w-100 { width: 100%; }
+    </style>
+</head>
+<body>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+        <div class="splash-glow"></div>
+        <div class="splash-icon-container">
+            <div class="splash-ornament"></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2m0 0a2 2 0 100 4 2 2 0 000-4z" />
+            </svg>
+        </div>
+        <h1 class="splash-title">Catatan Setoran</h1>
+        <p class="splash-subtitle">Sistem Terintegrasi Google Sheets</p>
+    </div>
+
+    <!-- SIDEBAR (Desktop) -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            <h2>Hafalan<br>Qur'an</h2>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="navigate('dashboard')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg> Dashboard
+            </li>
+            <li class="nav-item" onclick="navigate('siswa')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg> Data Siswa
+            </li>
+            <li class="nav-item" onclick="navigate('setoran')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Input Setoran
+            </li>
+            <li class="nav-item" onclick="navigate('riwayat')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> Riwayat
+            </li>
+            <li class="nav-item" onclick="navigate('rekap_hafalan')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg> Rekap Hafalan
+            </li>
+            <li class="nav-item" onclick="navigate('rekap_nilai')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> Rekap Nilai
+            </li>
+            <li class="nav-item" onclick="navigate('pengaturan')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Pengaturan
+            </li>
+        </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="school-info">
+                <h3 id="displaySchoolName">Madrasah Al-Hidayah</h3>
+                <p id="displaySchoolYear">Tahun Ajaran 2026/2027</p>
+            </div>
+            <div class="topbar-right">
+                <!-- Indikator DB -->
+                <div class="status-container" id="dbStatusIndicator" title="Status Database: Lokal">
+                    <div class="status-dot" id="dbStatusDot"></div>
+                    <span id="dbStatusText">Offline / Lokal</span>
+                </div>
+                
+                <button class="btn-icon" id="themeToggle" title="Mode Gelap/Terang">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+                <button class="btn-icon danger-hover" id="exitApp" title="Keluar Aplikasi" onclick="keluarAplikasi()">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="print-header">
+            <h2 id="printSchoolName">Madrasah Al-Hidayah</h2>
+            <p>Laporan Catatan Setoran Hafalan Qur'an</p>
+            <p id="printSchoolYear">Tahun Ajaran 2026/2027</p>
+        </div>
+
+        <!-- PAGE: DASHBOARD -->
+        <section id="dashboard" class="page-content active">
+            <div class="page-header">
+                <h1 class="page-title">Dashboard Utama</h1>
+                <p class="text-muted" id="currentDateDisplay" style="font-size:0.9rem;"></p>
+            </div>
+            <div class="stats-grid">
+                <div class="card stat-card" style="margin-bottom:0;">
+                    <div class="stat-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+                    <div class="stat-info"><h4>Total Siswa</h4><p id="statTotalSiswa">0</p></div>
+                </div>
+                <div class="card stat-card" style="margin-bottom:0;">
+                    <div class="stat-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                    <div class="stat-info"><h4>Setoran Hari Ini</h4><p id="statSetoranHariIni">0</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 style="margin-bottom: 12px; font-size: 1.1rem;">Setoran Terbaru Hari Ini</h3>
+                <div class="table-responsive">
+                    <table style="min-width: 500px;">
+                        <thead><tr><th>Nama Siswa</th><th>Surah</th><th>Status</th></tr></thead>
+                        <tbody id="tableSetoranTerbaru"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: DATA SISWA -->
+        <section id="siswa" class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Data Siswa</h1>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" onclick="unduhTemplateExcel()">Template Excel</button>
+                    <input type="file" id="excelImportFile" accept=".xlsx, .xls" style="display: none;" onchange="imporSiswaExcel(event)">
+                    <button class="btn btn-outline" onclick="document.getElementById('excelImportFile').click()">Impor Excel</button>
+                    <button class="btn btn-secondary" onclick="eksporSiswaExcel()">Ekspor Excel</button>
+                    <button class="btn btn-primary" onclick="openModal('modalSiswa')">Tambah Manual</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="searchSiswa" class="form-control" placeholder="Cari nama siswa / NIS..." oninput="renderTableSiswa()">
+                    <select id="filterKelasSiswa" class="form-control" onchange="renderTableSiswa()">
+                        <option value="">Semua Kelas</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>NIS</th><th>Nama Lengkap</th><th>Kelas</th><th>Target</th><th>Aksi</th></tr></thead>
+                        <tbody id="tableSiswa"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: INPUT SETORAN -->
+        <section id="setoran" class="page-content">
+            <div class="page-header"><h1 class="page-title">Input Setoran Massal</h1></div>
+            <div class="card" style="background-color: rgba(0, 125, 64, 0.05); border-color: var(--primary);">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom: 0; flex-grow: 1; min-width: 130px;">
+                        <label>Tanggal Setoran</label>
+                        <input type="date" id="massTanggal" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0; flex-grow: 1; min-width: 130px;">
+                        <label>Pilih Kelas</label>
+                        <select id="massKelas" class="form-control" onchange="generateMassTable()">
+                            <option value="">-- Pilih Kelas --</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0; flex-grow: 1; min-width: 200px;">
+                        <label>Nama Surah (Pilih dari 114 Surah)</label>
+                        <select id="massSurah" class="form-control">
+                            <option value="">-- Pilih Surah --</option>
+                        </select>
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; margin-top: 10px; color: var(--text-muted);">
+                    *Pilih kelas lalu isi kolom <strong>Ayat</strong> di bawah bagi siswa yang menyetor hari ini.
+                </p>
+            </div>
+
+            <div class="card" id="massTableContainer" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap:10px;">
+                    <h3 style="font-size: 1.1rem;">Tabel Isian</h3>
+                    <button class="btn btn-primary" onclick="saveMassSetoran()">Simpan Setoran</button>
+                </div>
+                <div class="table-responsive" style="max-height: 60vh;">
+                    <table style="min-width: 800px;">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 150px; position: sticky; left: 0; background-color: var(--bg-body); z-index: 2;">Nama Siswa</th>
+                                <th>Ayat (Isi Jika Setor)</th>
+                                <th>Juz</th>
+                                <th>Status</th>
+                                <th>Nilai</th>
+                                <th>Catatan (Opsional)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableMassInput"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: RIWAYAT HAFALAN -->
+        <section id="riwayat" class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Riwayat Hafalan</h1>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-outline" onclick="exportCSV()">Export CSV</button>
+                    <button class="btn btn-secondary" onclick="window.print()">Cetak</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="filterNamaRiwayat" class="form-control" placeholder="Cari nama..." oninput="renderTableRiwayat()">
+                    <select id="filterKelasRiwayat" class="form-control" onchange="renderTableRiwayat()"><option value="">Semua Kelas</option></select>
+                    <input type="date" id="filterTanggalRiwayat" class="form-control" onchange="renderTableRiwayat()">
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Tanggal</th><th>Siswa</th><th>Hafalan</th><th>Stts/Nilai</th><th>Aksi</th></tr></thead>
+                        <tbody id="tableRiwayat"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: REKAP HAFALAN -->
+        <section id="rekap_hafalan" class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Rekap Hafalan Kelas</h1>
+                <button class="btn btn-whatsapp" onclick="kirimWAGrupRekapHafalan()">
+                    <svg fill="currentColor" viewBox="0 0 24 24" width="18" height="18" style="margin-right:4px;">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766 0 1.011.266 1.996.772 2.863l-.82 2.996 3.064-.804a5.727 5.727 0 002.75.702h.002c3.18 0 5.768-2.586 5.768-5.766 0-1.542-.6-2.992-1.691-4.081a5.733 5.733 0 00-4.077-1.676zM12.03 4.14A7.779 7.779 0 0117.56 6.42A7.79 7.79 0 0119.824 11.94c0 4.301-3.498 7.801-7.799 7.801a7.766 7.766 0 01-3.966-1.082l-4.417 1.158 1.178-4.307a7.766 7.766 0 01-1.127-4.032c0-4.302 3.498-7.8 7.803-7.8h.001M16.291 14.28c-.234-.117-1.385-.683-1.598-.761-.213-.078-.368-.117-.523.117-.155.234-.602.761-.737.917-.135.156-.271.175-.505.058-.234-.117-.988-.364-1.884-1.168-.696-.624-1.165-1.396-1.302-1.63-.136-.234-.015-.36.102-.477.106-.106.234-.272.351-.409.117-.136.155-.234.234-.39.078-.156.039-.292-.02-.409-.058-.117-.523-1.261-.716-1.727-.188-.453-.38-.392-.523-.399-.136-.007-.292-.007-.448-.007-.156 0-.409.058-.624.292-.214.234-.818.8-.818 1.948 0 1.148.837 2.257.954 2.413.117.156 1.646 2.513 3.987 3.523.556.241.99.385 1.328.493.558.177 1.066.152 1.467.092.449-.067 1.385-.565 1.58-1.111.194-.546.194-1.014.135-1.111-.059-.097-.215-.156-.449-.273z"/>
+                    </svg>
+                    Kirim Laporan Hafalan ke WA
+                </button>
+            </div>
+            <div class="card">
+                <div class="filter-bar">
+                    <select id="filterKelasRekapHafalan" class="form-control" onchange="renderTableRekapHafalan()">
+                        <option value="">-- Pilih Kelas Untuk Direkap --</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>No</th><th>Nama Siswa</th><th>Total Setoran</th><th>Hafalan Terakhir</th></tr></thead>
+                        <tbody id="tableRekapHafalan"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: REKAP NILAI -->
+        <section id="rekap_nilai" class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Rekap Nilai Siswa</h1>
+                <button class="btn btn-whatsapp" onclick="kirimWAGrupRekapNilai()">
+                    <svg fill="currentColor" viewBox="0 0 24 24" width="18" height="18" style="margin-right:4px;">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766 0 1.011.266 1.996.772 2.863l-.82 2.996 3.064-.804a5.727 5.727 0 002.75.702h.002c3.18 0 5.768-2.586 5.768-5.766 0-1.542-.6-2.992-1.691-4.081a5.733 5.733 0 00-4.077-1.676zM12.03 4.14A7.779 7.779 0 0117.56 6.42A7.79 7.79 0 0119.824 11.94c0 4.301-3.498 7.801-7.799 7.801a7.766 7.766 0 01-3.966-1.082l-4.417 1.158 1.178-4.307a7.766 7.766 0 01-1.127-4.032c0-4.302 3.498-7.8 7.803-7.8h.001M16.291 14.28c-.234-.117-1.385-.683-1.598-.761-.213-.078-.368-.117-.523.117-.155.234-.602.761-.737.917-.135.156-.271.175-.505.058-.234-.117-.988-.364-1.884-1.168-.696-.624-1.165-1.396-1.302-1.63-.136-.234-.015-.36.102-.477.106-.106.234-.272.351-.409.117-.136.155-.234.234-.39.078-.156.039-.292-.02-.409-.058-.117-.523-1.261-.716-1.727-.188-.453-.38-.392-.523-.399-.136-.007-.292-.007-.448-.007-.156 0-.409.058-.624.292-.214.234-.818.8-.818 1.948 0 1.148.837 2.257.954 2.413.117.156 1.646 2.513 3.987 3.523.556.241.99.385 1.328.493.558.177 1.066.152 1.467.092.449-.067 1.385-.565 1.58-1.111.194-.546.194-1.014.135-1.111-.059-.097-.215-.156-.449-.273z"/>
+                    </svg>
+                    Kirim Nilai ke WA Grup
+                </button>
+            </div>
+            <div class="card">
+                <div class="filter-bar">
+                    <select id="filterKelasRekapNilai" class="form-control" onchange="renderTableRekapNilai()">
+                        <option value="">-- Pilih Kelas --</option>
+                    </select>
+                    <select id="filterSurahRekapNilai" class="form-control" onchange="renderTableRekapNilai()">
+                        <option value="">-- Semua Surah --</option>
+                    </select>
+                    <input type="number" id="filterJuzRekapNilai" class="form-control" placeholder="Filter Juz (opsional)" min="1" max="30" onchange="renderTableRekapNilai()">
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>No</th><th>Nama Siswa</th><th>Nilai Rata-rata</th><th>Detail Setoran (Sesuai Filter)</th></tr></thead>
+                        <tbody id="tableRekapNilai"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE: PENGATURAN -->
+        <section id="pengaturan" class="page-content">
+            <div class="page-header"><h1 class="page-title">Pengaturan Aplikasi</h1></div>
+            <div class="stats-grid">
+                <!-- INTEGRASI GOOGLE SHEETS -->
+                <div class="card" style="grid-column: 1 / -1; border-color: var(--primary); background-color: rgba(0, 125, 64, 0.03);">
+                    <h3 style="margin-bottom: 8px; font-size:1.1rem; color:var(--primary);">Koneksi Database (Google Sheets)</h3>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 16px;">
+                        Aplikasi dapat terhubung otomatis ke Google Spreadsheet Anda. Masukkan <strong>URL Aplikasi Web (Web App URL)</strong> dari Google Apps Script di bawah ini. Jika kosong, data hanya disimpan di browser lokal (Offline).
+                    </p>
+                    <div class="form-group" style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <input type="url" id="gasUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" style="flex-grow:1; min-width:250px;">
+                        <button class="btn btn-primary" onclick="connectToDatabase()">Simpan & Hubungkan</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 16px; font-size:1.1rem;">Identitas Sekolah</h3>
+                    <form onsubmit="savePengaturan(event)">
+                        <div class="form-group"><label>Nama Madrasah/Sekolah</label><input type="text" id="setSchoolName" class="form-control" required></div>
+                        <div class="form-group"><label>Tahun Ajaran</label><input type="text" id="setSchoolYear" class="form-control" required></div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content:center;">Simpan Profil</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 16px; font-size:1.1rem;">Backup & Keamanan (Lokal)</h3>
+                    <button class="btn btn-outline" style="width: 100%; justify-content: center; margin-bottom: 12px;" onclick="backupData()">Download Backup Data (JSON)</button>
+                    <div style="position: relative; overflow: hidden; display: inline-block; width: 100%; margin-bottom: 20px;">
+                        <button class="btn btn-outline" style="width: 100%; justify-content: center;">Restore Data dari File</button>
+                        <input type="file" id="restoreFile" accept=".json" onchange="restoreData(event)" style="font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;">
+                    </div>
+                    <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="confirmReset()">Hapus Semua Data Lokal</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+        <ul class="bottom-nav-list" style="overflow-x: auto; justify-content: flex-start;">
+            <li class="bottom-nav-item active" style="min-width: 60px;" onclick="navigate('dashboard')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Beranda</span>
+            </li>
+            <li class="bottom-nav-item" style="min-width: 60px;" onclick="navigate('siswa')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <span>Siswa</span>
+            </li>
+            <li class="bottom-nav-item" style="min-width: 60px;" onclick="navigate('setoran')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Setoran</span>
+            </li>
+            <li class="bottom-nav-item" style="min-width: 60px;" onclick="navigate('rekap_hafalan')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span>Hafalan</span>
+            </li>
+            <li class="bottom-nav-item" style="min-width: 60px;" onclick="navigate('rekap_nilai')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Nilai</span>
+            </li>
+            <li class="bottom-nav-item" style="min-width: 60px;" onclick="navigate('pengaturan')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Pengaturan</span>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- MODAL TAMBAH/EDIT SISWA -->
+    <div class="modal-overlay" id="modalSiswa">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalSiswaTitle">Tambah Siswa</h3>
+                <button class="modal-close" onclick="closeModal('modalSiswa')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formSiswa" onsubmit="saveSiswaAction(event)">
+                    <input type="hidden" id="siswaId">
+                    <div class="form-group"><label>Nomor Induk Siswa (NIS)</label><input type="text" id="siswaNis" class="form-control" required></div>
+                    <div class="form-group"><label>Nama Lengkap</label><input type="text" id="siswaNama" class="form-control" required></div>
+                    <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:4px; font-weight:500;">Jenjang & Kelas (Tingkat + Rombel)</label>
+                    <div id="formSiswaRow" style="display: flex; gap: 12px;">
+                        <div class="form-group" style="margin-bottom:0; flex-grow:1;">
+                            <select id="siswaJenjang" class="form-control" required onchange="updateDropdownTingkat()">
+                                <option value="">- Jenjang -</option><option value="SD/MI">SD/MI</option><option value="SMP/MTs">SMP/MTs</option><option value="SMA/MA">SMA/MA</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0; flex-grow:1;"><select id="siswaTingkat" class="form-control" required><option value="">- Tingkat -</option></select></div>
+                        <div class="form-group" style="margin-bottom:0; flex-grow:1;">
+                            <select id="siswaRombel" class="form-control" required><option value="">- Rombel -</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:12px;"><label>Target Hafalan</label><input type="text" id="siswaTarget" class="form-control" placeholder="Cth: Juz 30 / 3 Juz" required></div>
+                    <div class="modal-footer" style="padding: 12px 0 0 0; border: none; margin-top: 8px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modalSiswa')">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- =========================================
+         JAVASCRIPT LOGIC
+    ========================================= -->
+    <script>
+        // === DAFTAR 114 SURAH ===
+        const daftarSurah = [
+            "1. Al-Fatihah", "2. Al-Baqarah", "3. Ali 'Imran", "4. An-Nisa'", "5. Al-Ma'idah", "6. Al-An'am", "7. Al-A'raf", "8. Al-Anfal", "9. At-Taubah", "10. Yunus", "11. Hud", "12. Yusuf", "13. Ar-Ra'd", "14. Ibrahim", "15. Al-Hijr", "16. An-Nahl", "17. Al-Isra'", "18. Al-Kahfi", "19. Maryam", "20. Ta Ha", "21. Al-Anbiya'", "22. Al-Hajj", "23. Al-Mu'minun", "24. An-Nur", "25. Al-Furqan", "26. Asy-Syu'ara'", "27. An-Naml", "28. Al-Qasas", "29. Al-'Ankabut", "30. Ar-Rum", "31. Luqman", "32. As-Sajdah", "33. Al-Ahzab", "34. Saba'", "35. Fatir", "36. Ya Sin", "37. As-Saffat", "38. Sad", "39. Az-Zumar", "40. Ghafir", "41. Fussilat", "42. Asy-Syura", "43. Az-Zukhruf", "44. Ad-Dukhan", "45. Al-Jasiyah", "46. Al-Ahqaf", "47. Muhammad", "48. Al-Fath", "49. Al-Hujurat", "50. Qaf", "51. Az-Zariyat", "52. At-Tur", "53. An-Najm", "54. Al-Qamar", "55. Ar-Rahman", "56. Al-Waqi'ah", "57. Al-Hadid", "58. Al-Mujadilah", "59. Al-Hasyr", "60. Al-Mumtahanah", "61. As-Saff", "62. Al-Jumu'ah", "63. Al-Munafiqun", "64. At-Tagabun", "65. At-Talaq", "66. At-Tahrim", "67. Al-Mulk", "68. Al-Qalam", "69. Al-Haqqah", "70. Al-Ma'arij", "71. Nuh", "72. Al-Jinn", "73. Al-Muzzammil", "74. Al-Muddassir", "75. Al-Qiyamah", "76. Al-Insan", "77. Al-Mursalat", "78. An-Naba'", "79. An-Nazi'at", "80. 'Abasa", "81. At-Takwir", "82. Al-Infitar", "83. Al-Mutaffifin", "84. Al-Insyiqaq", "85. Al-Buruj", "86. At-Tariq", "87. Al-A'la", "88. Al-Gasyiyah", "89. Al-Fajr", "90. Al-Balad", "91. Asy-Syams", "92. Al-Lail", "93. Ad-Duha", "94. Asy-Syarh", "95. At-Tin", "96. Al-'Alaq", "97. Al-Qadr", "98. Al-Bayyinah", "99. Az-Zalzalah", "100. Al-'Adiyat", "101. Al-Qari'ah", "102. At-Takasur", "103. Al-'Asr", "104. Al-Humazah", "105. Al-Fil", "106. Quraisy", "107. Al-Ma'un", "108. Al-Kausar", "109. Al-Kafirun", "110. An-Nasr", "111. Al-Lahab", "112. Al-Ikhlas", "113. Al-Falaq", "114. An-Nas"
+        ];
+
+        function initSurahDropdowns() {
+            let optionsHTML = '';
+            daftarSurah.forEach(surah => {
+                const cleanName = surah.replace(/^\d+\.\s*/, '');
+                optionsHTML += `<option value="${cleanName}">${surah}</option>`;
+            });
+            document.getElementById('massSurah').innerHTML = '<option value="">-- Pilih Surah --</option>' + optionsHTML;
+            document.getElementById('filterSurahRekapNilai').innerHTML = '<option value="">-- Semua Surah --</option>' + optionsHTML;
+        }
+
+        /* === STATE MANAGEMENT & DATABASE SYNC === */
+        let state = { siswa: [], setoran: [], pengaturan: { schoolName: "Madrasah Baitul Qur'an", schoolYear: "2026/2027", theme: "light" } };
+        const STORAGE_KEY = "HAFALAN_QURAN_APP_V7";
+
+        // Fungsi Load Data (Database / Lokal)
+        async function loadData() {
+            let gasUrl = localStorage.getItem("GAS_URL");
+            
+            // Set URL default jika pengguna belum pernah menyetelnya
+            if (gasUrl === null) {
+                gasUrl = "https://script.google.com/macros/s/AKfycbzBvpHnIyJVjRgBPvbNOqItZf2DQWfrCXrhzOwkaGjzcW8_uSxiSFaxAsSQr4rZ9gWgCg/exec";
+                localStorage.setItem("GAS_URL", gasUrl);
+            }
+
+            document.getElementById('gasUrlInput').value = gasUrl || "";
+            
+            if (gasUrl) {
+                updateStatusDot('syncing', 'Menghubungkan ke Database...');
+                try {
+                    const response = await fetch(gasUrl + "?action=readAll");
+                    const result = await response.json();
+                    if(result.status === 'success') {
+                        state = result.data;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); // Backup lokal
+                        updateStatusDot('online', 'Terhubung (Google Sheets)');
+                    } else throw new Error("Gagal");
+                } catch(e) {
+                    updateStatusDot('offline', 'Gagal Terhubung (Pakai Lokal)');
+                    loadLocalData();
+                }
+            } else {
+                updateStatusDot('offline', 'Offline (Penyimpanan Lokal)');
+                loadLocalData();
+            }
+            applyTheme(state.pengaturan.theme);
+            updateViews('dashboard');
+        }
+
+        function loadLocalData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) { state = JSON.parse(saved); } else {
+                state.siswa = [
+                    { id: "s1", nis: "MI-001", nama: "Ahmad Rayhan", kelas: "1 A (SD/MI)", target: "Juz 30" },
+                    { id: "s2", nis: "MI-002", nama: "Syifa Azzahra", kelas: "1 A (SD/MI)", target: "Juz 30" },
+                    { id: "s11", nis: "MTS-001", nama: "Zacky Darmawan", kelas: "7 A (SMP/MTs)", target: "2 Juz" }
+                ];
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            }
+        }
+
+        // Fungsi Save Data (Lokal + Sync ke Database)
+        async function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); // Langsung simpan lokal agar UI responsif
+            const gasUrl = localStorage.getItem("GAS_URL");
+            if (gasUrl) {
+                updateStatusDot('syncing', 'Menyimpan ke Cloud...');
+                try {
+                    const response = await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'syncAll', data: state }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' } // Hindari preflight CORS
+                    });
+                    const result = await response.json();
+                    if(result.status === 'success') updateStatusDot('online', 'Tersimpan & Terhubung');
+                    else updateStatusDot('offline', 'Gagal Sinkronisasi');
+                } catch(e) {
+                    updateStatusDot('offline', 'Offline (Tersimpan Lokal)');
+                }
+            }
+        }
+
+        function connectToDatabase() {
+            const url = document.getElementById('gasUrlInput').value.trim();
+            localStorage.setItem("GAS_URL", url);
+            showToast('Memuat ulang untuk sinkronisasi...', 'warning');
+            setTimeout(() => location.reload(), 1000);
+        }
+
+        function updateStatusDot(status, title) {
+            const dot = document.getElementById('dbStatusDot');
+            const txt = document.getElementById('dbStatusText');
+            dot.className = 'status-dot ' + status;
+            txt.innerText = title;
+            document.getElementById('dbStatusIndicator').title = title;
+        }
+
+        /* === INITIALIZATION === */
+        window.addEventListener('load', () => {
+            initSurahDropdowns();
+            setTimeout(() => { document.getElementById('splash-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('splash-screen').style.visibility = 'hidden'; }, 600); }, 1500);
+            loadData();
+        });
+
+        /* === NAVIGATION === */
+        function navigate(pageId) {
+            document.querySelectorAll('.page-content, .sidebar .nav-item, .bottom-nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.sidebar .nav-item, .bottom-nav-item').forEach(item => { if(item.getAttribute('onclick').includes(pageId)) item.classList.add('active'); });
+            window.scrollTo(0,0); updateViews(pageId);
+        }
+
+        function updateViews(pageId) {
+            updateHeaderInfo();
+            if(pageId === 'dashboard') renderDashboard();
+            if(pageId === 'siswa') renderTableSiswa();
+            if(pageId === 'setoran') initSetoranMassal();
+            if(pageId === 'riwayat') renderTableRiwayat();
+            if(pageId === 'rekap_hafalan') { updateDropdownKelas('filterKelasRekapHafalan'); renderTableRekapHafalan(); }
+            if(pageId === 'rekap_nilai') { updateDropdownKelas('filterKelasRekapNilai'); renderTableRekapNilai(); }
+            if(pageId === 'pengaturan') { document.getElementById('setSchoolName').value = state.pengaturan.schoolName; document.getElementById('setSchoolYear').value = state.pengaturan.schoolYear; }
+        }
+
+        /* === UTILITIES === */
+        document.getElementById('themeToggle').addEventListener('click', () => { const newTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark'; applyTheme(newTheme); state.pengaturan.theme = newTheme; saveData(); });
+        function applyTheme(theme) { theme === 'dark' ? document.body.classList.add('dark-mode') : document.body.classList.remove('dark-mode'); }
+        function keluarAplikasi() { if(confirm('Keluar dari aplikasi?')) { showToast('Aplikasi ditutup.'); setTimeout(() => { try{window.close();}catch(e){} document.body.innerHTML = "<div style='display:flex; height:100vh; justify-content:center; align-items:center; flex-direction:column; background:#004D26; color:white;'><h2 style='color:#D4AF37;'>Sesi Berakhir</h2></div>"; }, 1000); } }
+        function updateHeaderInfo() { document.getElementById('displaySchoolName').innerText = state.pengaturan.schoolName; document.getElementById('displaySchoolYear').innerText = "TA " + state.pengaturan.schoolYear; }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); if(id === 'modalSiswa') document.getElementById('formSiswa').reset(); }
+        function showToast(message, type = 'success') { const c = document.getElementById('toastContainer'); const t = document.createElement('div'); t.className = 'toast'; if(type === 'danger') t.style.backgroundColor = 'var(--danger)'; if(type === 'warning') t.style.backgroundColor = 'var(--warning)'; t.innerHTML = `<span>${message}</span>`; c.appendChild(t); setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 300); }, 2500); }
+
+        /* === DASHBOARD === */
+        function renderDashboard() {
+            document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+            document.getElementById('statTotalSiswa').innerText = state.siswa.length;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('statSetoranHariIni').innerText = state.setoran.filter(d => d.tanggal === today).length;
+            const tbody = document.getElementById('tableSetoranTerbaru'); tbody.innerHTML = '';
+            const hariIni = state.setoran.filter(d => d.tanggal === today).slice(0, 10);
+            if(hariIni.length === 0) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Belum ada setoran hari ini</td></tr>`; } 
+            else { hariIni.forEach(d => { const s = state.siswa.find(x => x.id === d.siswaId); const bg = d.status === 'Lancar' ? 'badge-success' : (d.status === 'Cukup' ? 'badge-warning' : 'badge-danger'); tbody.innerHTML += `<tr><td><strong>${s ? s.nama : '-'}</strong></td><td>${d.surah} <span style="font-size:0.8rem;">(Ay ${d.ayat})</span></td><td><span class="badge ${bg}">${d.status}</span></td></tr>`; }); }
+        }
+
+        /* === DATA SISWA === */
+        function renderTableSiswa() {
+            const tbody = document.getElementById('tableSiswa');
+            const search = document.getElementById('searchSiswa').value.toLowerCase();
+            const filterKelas = document.getElementById('filterKelasSiswa').value;
+            tbody.innerHTML = ''; updateDropdownKelas('filterKelasSiswa');
+            let filtered = state.siswa.filter(s => { return (s.nama.toLowerCase().includes(search) || s.nis.toLowerCase().includes(search)) && (filterKelas === "" || s.kelas === filterKelas); });
+            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Data tidak ditemukan.</td></tr>`; return; }
+            filtered.forEach(s => { tbody.innerHTML += `<tr><td>${s.nis}</td><td><strong>${s.nama}</strong></td><td>${s.kelas}</td><td>${s.target}</td><td style="white-space:nowrap;"><button class="btn btn-small btn-outline" style="color:var(--primary); border-color:var(--primary);" onclick="editSiswa('${s.id}')">Edit</button> <button class="btn btn-small btn-danger" onclick="deleteSiswa('${s.id}')">Hapus</button></td></tr>`; });
+        }
+
+        function updateDropdownKelas(elementId) {
+            const el = document.getElementById(elementId); if(!el) return;
+            const currentVal = el.value;
+            const uniqueKelas = [...new Set(state.siswa.map(s => s.kelas))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            el.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            uniqueKelas.forEach(k => { el.innerHTML += `<option value="${k}">${k}</option>`; });
+            el.value = currentVal;
+        }
+
+        function updateDropdownTingkat() {
+            const jenjang = document.getElementById('siswaJenjang').value; const tingkatSelect = document.getElementById('siswaTingkat');
+            tingkatSelect.innerHTML = '<option value="">- Tingkat -</option>';
+            if(!jenjang) return;
+            let min=1, max=6; if(jenjang==='SMP/MTs'){ min=7; max=9; } else if(jenjang==='SMA/MA'){ min=10; max=12; }
+            for(let i=min; i<=max; i++) tingkatSelect.innerHTML += `<option value="${i}">${i}</option>`;
+        }
+
+        function saveSiswaAction(e) {
+            e.preventDefault();
+            const id = document.getElementById('siswaId').value;
+            const kelas = `${document.getElementById('siswaTingkat').value} ${document.getElementById('siswaRombel').value} (${document.getElementById('siswaJenjang').value})`;
+            const data = { nis: document.getElementById('siswaNis').value, nama: document.getElementById('siswaNama').value, kelas, target: document.getElementById('siswaTarget').value };
+            if(id) { const idx = state.siswa.findIndex(s => s.id === id); if(idx > -1) { state.siswa[idx] = { id, ...data }; showToast('Diperbarui!'); } } 
+            else { state.siswa.push({ id: 's_' + Date.now(), ...data }); showToast('Ditambahkan!'); }
+            saveData(); closeModal('modalSiswa'); renderTableSiswa();
+        }
+
+        function editSiswa(id) {
+            const s = state.siswa.find(x => x.id === id); if(!s) return;
+            document.getElementById('siswaId').value = s.id; document.getElementById('siswaNis').value = s.nis; document.getElementById('siswaNama').value = s.nama; document.getElementById('siswaTarget').value = s.target;
+            const match = s.kelas.match(/^(\d+)\s+([A-Z])\s+\((.+)\)$/i);
+            if(match) { document.getElementById('siswaJenjang').value = match[3]; updateDropdownTingkat(); document.getElementById('siswaTingkat').value = match[1]; document.getElementById('siswaRombel').value = match[2]; }
+            document.getElementById('modalSiswaTitle').innerText = 'Edit Siswa'; openModal('modalSiswa');
+        }
+        function deleteSiswa(id) { if(confirm('Hapus siswa ini?')) { state.siswa = state.siswa.filter(s => s.id !== id); saveData(); renderTableSiswa(); showToast('Dihapus!', 'danger'); } }
+
+        /* === IMPORT EXPORT EXCEL === */
+        function unduhTemplateExcel() {
+            const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet([["NIS", "Nama Lengkap", "Kelas", "Target Hafalan"], ["MI-123", "Zaidan", "3 A (SD/MI)", "Juz 30"]]);
+            XLSX.utils.book_append_sheet(wb, ws, "Template"); XLSX.writeFile(wb, "Template_Data_Siswa.xlsx");
+        }
+        function eksporSiswaExcel() {
+            if(state.siswa.length === 0) return showToast('Kosong!', 'warning');
+            const data = state.siswa.map(s => ({"NIS": s.nis, "Nama Lengkap": s.nama, "Kelas": s.kelas, "Target Hafalan": s.target}));
+            const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Siswa"); XLSX.writeFile(wb, "Data_Siswa.xlsx");
+        }
+        function imporSiswaExcel(e) {
+            const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    if (json.length === 0) return showToast('Kosong!', 'warning');
+                    let imported = 0;
+                    json.forEach(row => {
+                        const nis = String(row["NIS"]||'').trim(); const nama = String(row["Nama Lengkap"]||'').trim(); const kelas = String(row["Kelas"]||'').trim();
+                        if(nis && nama && kelas) {
+                            const idx = state.siswa.findIndex(s => s.nis === nis);
+                            if(idx > -1) state.siswa[idx] = {...state.siswa[idx], nama, kelas, target: row["Target Hafalan"]||'Juz 30'};
+                            else state.siswa.push({id: 's_'+Date.now()+imported, nis, nama, kelas, target: row["Target Hafalan"]||'Juz 30'});
+                            imported++;
+                        }
+                    });
+                    saveData(); renderTableSiswa(); showToast(`Impor ${imported} siswa!`); e.target.value='';
+                } catch (err) { showToast('Gagal!', 'danger'); }
+            }; reader.readAsArrayBuffer(file);
+        }
+
+        /* === SETORAN MASSAL === */
+        function initSetoranMassal() {
+            document.getElementById('massTanggal').value = new Date().toISOString().split('T')[0];
+            document.getElementById('massSurah').value = ''; updateDropdownKelas('massKelas');
+            document.getElementById('massTableContainer').style.display = 'none';
+        }
+        function generateMassTable() {
+            const kelas = document.getElementById('massKelas').value; const container = document.getElementById('massTableContainer'); const tbody = document.getElementById('tableMassInput'); tbody.innerHTML = '';
+            if(!kelas) { container.style.display = 'none'; return; }
+            const siswaKelas = state.siswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+            siswaKelas.forEach(s => {
+                tbody.innerHTML += `<tr data-siswa="${s.id}">
+                    <td style="position: sticky; left: 0; background-color: var(--bg-body); z-index: 1;"><strong>${s.nama}</strong><br><small class="text-muted">${s.nis}</small></td>
+                    <td class="mass-input-cell"><input type="text" class="form-control m-ayat" placeholder="Cth: 1-15"></td>
+                    <td class="mass-input-cell small-col"><input type="number" class="form-control m-juz" placeholder="Juz" min="1" max="30"></td>
+                    <td class="mass-input-cell"><select class="form-control m-status"><option value="Lancar">Lancar</option><option value="Cukup">Cukup</option><option value="Perlu Murojaah">Murojaah</option></select></td>
+                    <td class="mass-input-cell small-col"><input type="number" class="form-control m-nilai" placeholder="Nilai"></td>
+                    <td class="mass-input-cell"><input type="text" class="form-control m-catatan" placeholder="Catatan..."></td>
+                </tr>`;
+            }); container.style.display = 'block';
+        }
+        function saveMassSetoran() {
+            const tgl = document.getElementById('massTanggal').value; const surah = document.getElementById('massSurah').value;
+            if(!tgl || !surah) return showToast('Isi Tanggal & Pilih Surah!', 'warning');
+            let count = 0;
+            document.querySelectorAll('#tableMassInput tr[data-siswa]').forEach(row => {
+                const ayat = row.querySelector('.m-ayat').value.trim();
+                if(ayat !== '') {
+                    state.setoran.push({ id: 'd_'+Date.now()+count, tanggal: tgl, siswaId: row.getAttribute('data-siswa'), surah, ayat, juz: row.querySelector('.m-juz').value||"30", status: row.querySelector('.m-status').value, nilai: row.querySelector('.m-nilai').value||"-", catatan: row.querySelector('.m-catatan').value });
+                    row.querySelector('.m-ayat').value=''; row.querySelector('.m-nilai').value=''; count++;
+                }
+            });
+            if(count>0) { saveData(); showToast(`Tersimpan ${count} setoran!`); } else showToast('Isi kolom ayat!', 'warning');
+        }
+
+        /* === RIWAYAT === */
+        function renderTableRiwayat() {
+            const tbody = document.getElementById('tableRiwayat');
+            const search = document.getElementById('filterNamaRiwayat').value.toLowerCase();
+            const filterKelas = document.getElementById('filterKelasRiwayat').value;
+            const filterDate = document.getElementById('filterTanggalRiwayat').value;
+            updateDropdownKelas('filterKelasRiwayat'); tbody.innerHTML = '';
+            let filtered = [...state.setoran].sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal)).filter(d => {
+                const s = state.siswa.find(x => x.id === d.siswaId); if(!s) return false;
+                return s.nama.toLowerCase().includes(search) && (filterKelas === "" || s.kelas === filterKelas) && (filterDate === "" || d.tanggal === filterDate);
+            });
+            if(filtered.length===0) return tbody.innerHTML = `<tr><td colspan="5" align="center">Kosong.</td></tr>`;
+            filtered.forEach(d => {
+                const s = state.siswa.find(x => x.id === d.siswaId);
+                const badge = d.status==='Lancar'?'badge-success':(d.status==='Cukup'?'badge-warning':'badge-danger');
+                tbody.innerHTML += `<tr><td style="font-size:0.8rem;">${new Date(d.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</td>
+                <td><strong>${s.nama}</strong><br><small>${s.kelas}</small></td>
+                <td><strong>${d.surah}</strong><br><small>Ay ${d.ayat} | Jz ${d.juz}</small></td>
+                <td><span class="badge ${badge}">${d.status}</span><br><small>Nilai: <strong>${d.nilai}</strong></small></td>
+                <td style="white-space:nowrap;"><button class="btn btn-small btn-danger" onclick="deleteSetoran('${d.id}')">Hapus</button></td></tr>`;
+            });
+        }
+        function deleteSetoran(id) { if(confirm('Hapus?')) { state.setoran = state.setoran.filter(d => d.id !== id); saveData(); renderTableRiwayat(); } }
+
+        /* === REKAP HAFALAN (UMUM) === */
+        function renderTableRekapHafalan() {
+            const kelas = document.getElementById('filterKelasRekapHafalan').value;
+            const tbody = document.getElementById('tableRekapHafalan'); tbody.innerHTML = '';
+            if(!kelas) { tbody.innerHTML = `<tr><td colspan="4" align="center">Pilih kelas di atas.</td></tr>`; return; }
+            
+            const siswaKelas = state.siswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+            siswaKelas.forEach((s, idx) => {
+                const setorans = state.setoran.filter(d => d.siswaId === s.id).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+                const total = setorans.length;
+                let hafalanTerakhir = `<i class="text-muted">Belum ada setoran</i>`;
+                if(total > 0) hafalanTerakhir = `<strong>${setorans[0].surah}</strong> (Ay. ${setorans[0].ayat})<br><small class="text-muted">Status: ${setorans[0].status}</small>`;
+                tbody.innerHTML += `<tr><td align="center">${idx+1}</td><td><strong>${s.nama}</strong></td><td><strong>${total}</strong> kali</td><td>${hafalanTerakhir}</td></tr>`;
+            });
+        }
+        function kirimWAGrupRekapHafalan() {
+            const kelas = document.getElementById('filterKelasRekapHafalan').value;
+            if(!kelas) return showToast('Pilih kelas terlebih dahulu!', 'warning');
+            const siswaKelas = state.siswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+            let teksWA = `Assalamu'alaikum Wr. Wb.\n\n*LAPORAN HAFALAN KELAS ${kelas}*\n📅 ${new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}\n================================\n`;
+            siswaKelas.forEach((s, idx) => {
+                const setorans = state.setoran.filter(d => d.siswaId === s.id).sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+                if(setorans.length > 0) teksWA += `*${idx+1}. ${s.nama}*\n   📖 Terakhir: ${setorans[0].surah} (Ay. ${setorans[0].ayat})\n   📊 Status: ${setorans[0].status}\n\n`;
+                else teksWA += `*${idx+1}. ${s.nama}*\n   _(Belum ada setoran)_\n\n`;
+            });
+            teksWA += `================================\nMohon Ayah/Bunda untuk terus mendampingi ananda murojaah di rumah. Terima kasih.\n\nWassalamu'alaikum Wr. Wb.\n*${state.pengaturan.schoolName}*`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(teksWA)}`, '_blank');
+        }
+
+        /* === REKAP NILAI (KHUSUS SURAH/JUZ) === */
+        function renderTableRekapNilai() {
+            const kelas = document.getElementById('filterKelasRekapNilai').value;
+            const surahFilter = document.getElementById('filterSurahRekapNilai').value;
+            const juzFilter = document.getElementById('filterJuzRekapNilai').value;
+            const tbody = document.getElementById('tableRekapNilai'); tbody.innerHTML = '';
+            
+            if(!kelas) { tbody.innerHTML = `<tr><td colspan="4" align="center">Pilih kelas terlebih dahulu.</td></tr>`; return; }
+            
+            const siswaKelas = state.siswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+            siswaKelas.forEach((s, idx) => {
+                let setorans = state.setoran.filter(d => d.siswaId === s.id);
+                if (surahFilter) setorans = setorans.filter(d => d.surah === surahFilter);
+                if (juzFilter) setorans = setorans.filter(d => d.juz == juzFilter);
+
+                let detailHTML = `<i class="text-muted">Tidak ada data</i>`;
+                let rataRataHTML = `-`;
+
+                if (setorans.length > 0) {
+                    let totalNilai = 0; let countNilai = 0;
+                    setorans.forEach(d => { const n = parseFloat(d.nilai); if(!isNaN(n)) { totalNilai += n; countNilai++; } });
+                    if(countNilai > 0) rataRataHTML = `<strong>${Math.round(totalNilai / countNilai)}</strong>`;
+
+                    detailHTML = `<ul style="margin-left: 16px; font-size: 0.85rem; color: var(--text-muted);">`;
+                    setorans.slice(-3).forEach(d => { detailHTML += `<li>${d.surah} (Ay. ${d.ayat}) - Nilai: <b>${d.nilai}</b></li>`; });
+                    if(setorans.length > 3) detailHTML += `<li><i>...dan ${setorans.length - 3} lainnya</i></li>`;
+                    detailHTML += `</ul>`;
+                }
+                tbody.innerHTML += `<tr><td align="center">${idx+1}</td><td><strong>${s.nama}</strong></td><td align="center">${rataRataHTML}</td><td>${detailHTML}</td></tr>`;
+            });
+        }
+
+        function kirimWAGrupRekapNilai() {
+            const kelas = document.getElementById('filterKelasRekapNilai').value;
+            const surahFilter = document.getElementById('filterSurahRekapNilai').value;
+            const juzFilter = document.getElementById('filterJuzRekapNilai').value;
+            
+            if(!kelas) return showToast('Pilih kelas terlebih dahulu!', 'warning');
+            
+            const siswaKelas = state.siswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+            let filterText = "KESELURUHAN";
+            if(surahFilter && juzFilter) filterText = `SURAH ${surahFilter.toUpperCase()} (JUZ ${juzFilter})`;
+            else if(surahFilter) filterText = `SURAH ${surahFilter.toUpperCase()}`;
+            else if(juzFilter) filterText = `JUZ ${juzFilter}`;
+
+            let teksWA = `Assalamu'alaikum Wr. Wb.\n\n*REKAP NILAI KELAS ${kelas}*\n📌 Kategori: ${filterText}\n📅 ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}\n================================\n`;
+            
+            siswaKelas.forEach((s, idx) => {
+                let setorans = state.setoran.filter(d => d.siswaId === s.id);
+                if (surahFilter) setorans = setorans.filter(d => d.surah === surahFilter);
+                if (juzFilter) setorans = setorans.filter(d => d.juz == juzFilter);
+
+                if(setorans.length > 0) {
+                    let totalNilai = 0; let countNilai = 0;
+                    setorans.forEach(d => { const n = parseFloat(d.nilai); if(!isNaN(n)){totalNilai+=n; countNilai++;} });
+                    const rata2 = countNilai > 0 ? Math.round(totalNilai/countNilai) : '-';
+                    teksWA += `*${idx+1}. ${s.nama}* = Nilai: *${rata2}*\n`;
+                } else { teksWA += `*${idx+1}. ${s.nama}* = _(Belum Ada Nilai)_\n`; }
+            });
+            teksWA += `================================\nDemikian laporan rekapitulasi nilai ananda.\n\nWassalamu'alaikum Wr. Wb.\n*${state.pengaturan.schoolName}*`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(teksWA)}`, '_blank');
+        }
+
+        /* === PENGATURAN === */
+        function savePengaturan(e) { e.preventDefault(); state.pengaturan.schoolName = document.getElementById('setSchoolName').value; state.pengaturan.schoolYear = document.getElementById('setSchoolYear').value; saveData(); updateHeaderInfo(); showToast('Tersimpan!'); }
+        function backupData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" })); a.download = `Backup.json`; a.click(); }
+        function restoreData(e) { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(d.siswa){ state=d; saveData(); setTimeout(()=>location.reload(),500);} }catch(err){} }; r.readAsText(f); }
+        function confirmReset() { if(confirm("Hapus Permanen? (Penyimpanan Lokal Saja)")) { if(prompt("Ketik 'HAPUS':")==='HAPUS'){ localStorage.removeItem(STORAGE_KEY); location.reload(); } } }
+
+    </script>
+</body>
+</html>
